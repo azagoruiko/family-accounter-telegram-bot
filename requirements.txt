@@ -1,0 +1,4 @@
+requests
+pytelegrambotapi
+boto3
+xlrd
