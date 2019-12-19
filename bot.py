@@ -58,6 +58,25 @@ def handle_file(message):
         else:
             copy_to_bucket(file_path, alfa_raw_bucket)
 
+def await_category_input(message):
+    bot.send_message(message.chat.id, 'Дякую! Який саме лiмiт?')
+    dialog_state[message.from_user.id] = {
+        'state': 'LIMIT_AWAITING_VALUE_INPUT',
+        'category': message.text,
+        'next': await_limit_value_input
+    }
+
+def await_limit_value_input(message):
+    bot.send_message(message.chat.id, 'Чудово! Встановлюю лiмiт.')
+    r = requests.put('%slimits' % goals_base_url,
+                      json.dumps({'category': dialog_state[message.from_user.id]['category'],
+                                  'limit': message.text,
+                                  'family': 'zagoruiko'}),
+                      headers={"Content-type": "application/json"})
+    del dialog_state[message.from_user.id]
+    if r.status_code != 200:
+        bot.send_message(message.chat.id, 'Щось поламалося((((((!')
+
 
 def handle_family(message):
     r = requests.post('%sevent/bot/family' % goals_base_url,
@@ -117,6 +136,15 @@ def start_message(message):
 
     if r.status_code != 200:
         bot.send_message(message.chat.id, 'Щось поламалося((((((!')
+
+
+@bot.message_handler(commands=['limit'])
+def set_limit_command(message):
+    bot.send_message(message.chat.id, 'Шановний, бажаєш встановити ліміт? Тоді вкажи категорію!')
+    dialog_state[message.from_user.id] = {
+        'state': 'LIMIT_AWAITING_CATEGORY_INPUT',
+        'next': await_category_input
+    }
 
 
 @bot.message_handler(content_types=['document'])
