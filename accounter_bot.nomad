@@ -27,12 +27,13 @@ OBJECT_STORAGE_ENDPOINT="{{ key "expenses/object/storage/fs.s3a.endpoint" }}"
 OBJECT_STORAGE_KEY="{{ key "expenses/object/storage/fs.s3a.access.key" }}"
 OBJECT_STORAGE_SECRET="{{ key "expenses/object/storage/fs.s3a.secret.key" }}"
 GOALS_BASE_URL="{{ key "telegram/bot/accounter/goals.base.url" }}"
+MATCHERS_BASE_URL="{{ key "expenses/service/matcher/base_url" }}"
 EOH
         destination = "secrets.env"
         env = true
       }
       config {
-        image = "127.0.0.1:9999/docker/accounter-bot:0.0.9"
+        image = "127.0.0.1:9999/docker/accounter-bot:0.0.7"
         args = [
         ]
       }

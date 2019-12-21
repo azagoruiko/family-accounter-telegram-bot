@@ -6,6 +6,8 @@ import boto3
 import json
 
 from xlrd import open_workbook
+from services.goals import Goals
+from services.matchers import Matchers
 
 token = os.environ['TELEGRAM_TOKEN']
 
@@ -15,16 +17,28 @@ s3 = boto3.client(
     aws_secret_access_key=os.environ['OBJECT_STORAGE_SECRET'],
     endpoint_url=os.environ['OBJECT_STORAGE_ENDPOINT'])
 
-bot = telebot.TeleBot(token)
-
 rates_bucket = os.environ['RATES_BUCKET']
 pb_input_bucket = os.environ['PB_INPUT_BUCKET']
 pb_raw_bucket = os.environ['PB_RAW_BUCKET']
 alfa_raw_bucket = os.environ['ALFA_RAW_BUCKET']
 
 goals_base_url = os.environ['GOALS_BASE_URL']
+matchers_base_url = os.environ['MATCHERS_BASE_URL']
+
+bot = telebot.TeleBot(token)
+remove_markup = telebot.types.ReplyKeyboardRemove(selective=False)
+goals = Goals(goals_base_url)
+matchers = Matchers("http://192.168.0.21:9999/matcher/")
 
 dialog_state = {}
+
+
+def handle_error(message, subject):
+    if subject == -1:
+        bot.send_message(message.chat.id, 'Щось поламалося((((((!')
+        del dialog_state[message.from_user.id]
+
+    return subject
 
 
 def pb_xls_to_csv(file):
@@ -58,24 +72,33 @@ def handle_file(message):
         else:
             copy_to_bucket(file_path, alfa_raw_bucket)
 
+
 def await_category_input(message):
-    bot.send_message(message.chat.id, 'Дякую! Який саме лiмiт?')
+    bot.send_message(message.chat.id, 'Дякую! Який саме лiмiт?', reply_markup=remove_markup)
     dialog_state[message.from_user.id] = {
         'state': 'LIMIT_AWAITING_VALUE_INPUT',
         'category': message.text,
         'next': await_limit_value_input
     }
 
+
 def await_limit_value_input(message):
     bot.send_message(message.chat.id, 'Чудово! Встановлюю лiмiт.')
-    r = requests.put('%slimits' % goals_base_url,
-                      json.dumps({'category': dialog_state[message.from_user.id]['category'],
-                                  'limit': message.text,
-                                  'family': 'zagoruiko'}),
-                      headers={"Content-type": "application/json"})
+    limit = goals.set_limit({'category': dialog_state[message.from_user.id]['category'],
+                                 'limit': message.text,
+                                 'family': 'zagoruiko'})
     del dialog_state[message.from_user.id]
-    if r.status_code != 200:
-        bot.send_message(message.chat.id, 'Щось поламалося((((((!')
+    if handle_error(message, limit) == -1:
+        return
+    bot.send_message(message.chat.id, 'Поточнi лiмiти')
+    limits = goals.get_limits('zagoruiko')
+    if handle_error(message, limits) == -1:
+        return
+    limitstr = '```\n'
+    for limit in limits:
+        limitstr += "%s\t%s\n" % (limit['category'], limit['limit'])
+
+    bot.send_message(message.chat.id, limitstr + '```', parse_mode='Markdown')
 
 
 def handle_family(message):
@@ -87,8 +110,8 @@ def handle_family(message):
                                   'family': message.text}),
                       headers={"Content-type": "application/json"})
 
-    if r.status_code != 200:
-        bot.send_message(message.chat.id, 'Щось поламалося((((((!')
+    if handle_error(message, (-1 if r.status_code != 200 else 1)) == -1:
+        return
 
     response = r.json()
     if response['botStartState'] == 'REGISTERED':
@@ -106,11 +129,11 @@ def start_message(message):
                       json.dumps({'chatId': message.chat.id,
                                   'userId': message.from_user.id,
                                   'userName': "%s %s" % (message.from_user.first_name,
-                                                            message.from_user.last_name)}),
+                                                         message.from_user.last_name)}),
                       headers={"Content-type": "application/json"})
 
-    if r.status_code != 200:
-        bot.send_message(message.chat.id, 'Щось поламалося((((((!')
+    if handle_error(message, (-1 if r.status_code != 200 else 1)) == -1:
+        return
 
     response = r.json()
     if response['botStartState'] == 'FAMILY_REQUIRED':
@@ -127,6 +150,32 @@ def start_message(message):
 @bot.message_handler(commands=['report'])
 def start_message(message):
     bot.send_message(message.chat.id, 'Шановний, надсилаю запит на репорт!')
+
+    bot.send_message(message.chat.id, 'Поточний стан')
+    limits = goals.get_limit_report('zagoruiko')
+    if handle_error(message, limits) == -1:
+        return
+
+    maxlen=0
+    for limit in limits:
+        if len(limit['category']) > maxlen:
+            maxlen = len(limit['category'])
+
+    for limit in limits:
+        if len(limit['category']) < maxlen:
+            for i in range(0, maxlen - len(limit['category'])):
+                limit['category'] += ' '
+
+    limitstr = '```\nКатегорiя\tЛiмiт/Витрати (%)\n'
+    for limit in limits:
+        limitstr += "%s\t%s/%s (%s%%)\n" % (limit['category'], limit['limit'], limit['amount'], limit['percent'])
+
+    bot.send_message(message.chat.id, limitstr + '```', parse_mode='Markdown')
+
+
+@bot.message_handler(commands=['overview'])
+def start_message(message):
+    bot.send_message(message.chat.id, 'Шановний, надсилаю запит на репорт!')
     r = requests.post('%sevent/bot/report' % goals_base_url,
                       json.dumps({'chatId': message.chat.id,
                                   'userId': message.from_user.id,
@@ -134,13 +183,26 @@ def start_message(message):
                                                          message.from_user.last_name)}),
                       headers={"Content-type": "application/json"})
 
-    if r.status_code != 200:
-        bot.send_message(message.chat.id, 'Щось поламалося((((((!')
+    if handle_error(message, (-1 if r.status_code != 200 else 1)) == -1:
+        return
 
 
 @bot.message_handler(commands=['limit'])
 def set_limit_command(message):
-    bot.send_message(message.chat.id, 'Шановний, бажаєш встановити ліміт? Тоді вкажи категорію!')
+    categories = matchers.get_categories()
+    if handle_error(message, categories) == -1:
+        return
+
+    keyboard = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=3)
+
+    buttons = []
+
+    for tag in categories:
+        buttons.append(telebot.types.KeyboardButton(tag['tag']))
+
+    keyboard.add(*buttons)
+
+    bot.send_message(message.chat.id, 'Шановний, бажаєш встановити ліміт? Тоді вкажи категорію!', reply_markup=keyboard)
     dialog_state[message.from_user.id] = {
         'state': 'LIMIT_AWAITING_CATEGORY_INPUT',
         'next': await_category_input
