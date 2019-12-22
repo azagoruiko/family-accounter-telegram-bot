@@ -147,7 +147,7 @@ def start_message(message):
         bot.send_message(message.chat.id, 'Шановний, ти вже був зiриганий!')
 
 
-@bot.message_handler(commands=['report'])
+@bot.message_handler(commands=['limits'])
 def start_message(message):
     bot.send_message(message.chat.id, 'Шановний, надсилаю запит на репорт!')
 
@@ -181,7 +181,7 @@ def start_message(message):
     bot.send_message(message.chat.id, limitstr + '```', parse_mode='Markdown')
 
 
-@bot.message_handler(commands=['overview'])
+@bot.message_handler(commands=['report'])
 def start_message(message):
     bot.send_message(message.chat.id, 'Шановний, надсилаю запит на репорт!')
     r = requests.post('%sevent/bot/report' % goals_base_url,
@@ -193,6 +193,17 @@ def start_message(message):
 
     if handle_error(message, (-1 if r.status_code != 200 else 1)) == -1:
         return
+
+
+@bot.message_handler(commands=['help'])
+def help_message(message):
+    bot.send_message(message.chat.id, """
+/help - Допомога або Перемога
+/start - Розпочати реєстрацію
+/report - Шалений репорт на поточний місяць
+/limit - Створити новий або змінити існуючий ліміт на поточний місяць
+/limits - Стан лімітів на поточний місяць
+    """)
 
 
 @bot.message_handler(commands=['limit'])
