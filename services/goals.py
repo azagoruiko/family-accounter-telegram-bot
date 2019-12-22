@@ -29,3 +29,11 @@ class Goals(object):
         if r.status_code != 200:
             return -1
         return r.json()
+
+    def get_monthly_limit_status(self, family):
+        r = requests.get("%sreport/limits/monthly/%s" % (self.base_url, family),
+                         headers={"Content-type": "application/json"})
+
+        if r.status_code != 200:
+            return -1
+        return r.json()

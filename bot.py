@@ -156,6 +156,10 @@ def start_message(message):
     if handle_error(message, limits) == -1:
         return
 
+    monthly_limit = goals.get_monthly_limit_status('zagoruiko')
+    if handle_error(message, monthly_limit) == -1:
+        return
+
     maxlen=0
     for limit in limits:
         if len(limit['category']) > maxlen:
@@ -168,7 +172,11 @@ def start_message(message):
 
     limitstr = '```\nКатегорiя\tЛiмiт/Витрати (%)\n'
     for limit in limits:
-        limitstr += "%s\t%s/%s (%s%%)\n" % (limit['category'], limit['limit'], limit['amount'], limit['percent'])
+        limitstr += "%s\t%s/%s (%s%%)\n" \
+                    % (limit['category'], limit['limit'], limit['amount'], limit['percent'])
+
+    limitstr += "\nЗагальний лiмiт\t%s/%s (%s%%)\n" \
+                % (monthly_limit['limit'], monthly_limit['amount'], monthly_limit['percent'])
 
     bot.send_message(message.chat.id, limitstr + '```', parse_mode='Markdown')
 

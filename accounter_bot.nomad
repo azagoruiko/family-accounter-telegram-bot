@@ -33,7 +33,7 @@ EOH
         env = true
       }
       config {
-        image = "127.0.0.1:9999/docker/accounter-bot:0.0.7"
+        image = "127.0.0.1:9999/docker/accounter-bot:0.0.1"
         args = [
         ]
       }
