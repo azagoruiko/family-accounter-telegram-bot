@@ -94,6 +94,17 @@ def await_limit_value_input(message):
     limits = goals.get_limits('zagoruiko')
     if handle_error(message, limits) == -1:
         return
+
+    maxlen=0
+    for limit in limits:
+        if len(limit['category']) > maxlen:
+            maxlen = len(limit['category'])
+
+    for limit in limits:
+        if len(limit['category']) < maxlen:
+            for i in range(0, maxlen - len(limit['category'])):
+                limit['category'] += ' '
+
     limitstr = '```\n'
     for limit in limits:
         limitstr += "%s\t%s\n" % (limit['category'], limit['limit'])
