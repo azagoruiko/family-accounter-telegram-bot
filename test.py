@@ -28,3 +28,4 @@ for limit in limits:
     limitstr += "%s\t%s\t%s\t%s%%\n" % (limit['category'], limit['limit'], limit['amount'], limit['percent'])
 print(limitstr)
 print(matchers.get_categories())
+print(matchers.get_unrecognized('SRC_PRIVAT_BANK', 0))

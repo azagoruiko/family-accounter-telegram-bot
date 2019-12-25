@@ -8,6 +8,7 @@ import json
 from xlrd import open_workbook
 from services.goals import Goals
 from services.matchers import Matchers
+from dialogs.unrecognized import RecognitionService
 
 token = os.environ['TELEGRAM_TOKEN']
 
@@ -136,6 +137,10 @@ def handle_family(message):
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
+    if message.from_user.id != 334401978 and message.from_user.id != 359732226:
+        bot.send_message(message.chat.id, 'Не готовий з вами спiвпрацювати!!\n')
+        del dialog_state[message.from_user.id]
+        return
     r = requests.post('%sevent/bot/start' % goals_base_url,
                       json.dumps({'chatId': message.chat.id,
                                   'userId': message.from_user.id,
@@ -160,6 +165,10 @@ def start_message(message):
 
 @bot.message_handler(commands=['limits'])
 def start_message(message):
+    if message.from_user.id != 334401978 and message.from_user.id != 359732226:
+        bot.send_message(message.chat.id, 'Не готовий з вами спiвпрацювати!!\n')
+        del dialog_state[message.from_user.id]
+        return
     bot.send_message(message.chat.id, 'Шановний, надсилаю запит на репорт!')
 
     bot.send_message(message.chat.id, 'Поточний стан')
@@ -194,6 +203,10 @@ def start_message(message):
 
 @bot.message_handler(commands=['report'])
 def start_message(message):
+    if message.from_user.id != 334401978 and message.from_user.id != 359732226:
+        bot.send_message(message.chat.id, 'Не готовий з вами спiвпрацювати!!\n')
+        del dialog_state[message.from_user.id]
+        return
     bot.send_message(message.chat.id, 'Шановний, надсилаю запит на репорт!')
     r = requests.post('%sevent/bot/report' % goals_base_url,
                       json.dumps({'chatId': message.chat.id,
@@ -208,17 +221,26 @@ def start_message(message):
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
+    if message.from_user.id != 334401978 and message.from_user.id != 359732226:
+        bot.send_message(message.chat.id, 'Не готовий з вами спiвпрацювати!!\n')
+        del dialog_state[message.from_user.id]
+        return
     bot.send_message(message.chat.id, """
 /help - Допомога або Перемога
 /start - Розпочати реєстрацію
 /report - Шалений репорт на поточний місяць
 /limit - Створити новий або змінити існуючий ліміт на поточний місяць
 /limits - Стан лімітів на поточний місяць
+/define - Розпочати роботу з неразпзнаними транзакцiями
     """)
 
 
 @bot.message_handler(commands=['limit'])
 def set_limit_command(message):
+    if message.from_user.id != 334401978 and message.from_user.id != 359732226:
+        bot.send_message(message.chat.id, 'Не готовий з вами спiвпрацювати!!\n')
+        del dialog_state[message.from_user.id]
+        return
     categories = matchers.get_categories()
     if handle_error(message, categories) == -1:
         return
@@ -239,8 +261,26 @@ def set_limit_command(message):
     }
 
 
+@bot.message_handler(commands=['define'])
+def start_define(message):
+    if message.from_user.id != 334401978 and message.from_user.id != 359732226:
+        bot.send_message(message.chat.id, 'Не готовий з вами спiвпрацювати!!\n')
+        del dialog_state[message.from_user.id]
+        return
+    service = RecognitionService(matchers, bot, message.from_user.id)
+    dialog_state[message.from_user.id] = {
+        'state': 'DEFINE',
+        'service': service,
+        'next': service.next
+    }
+
+
 @bot.message_handler(content_types=['document'])
 def file_message(message):
+    if message.from_user.id != 334401978 and message.from_user.id != 359732226:
+        bot.send_message(message.chat.id, 'Не готовий з вами спiвпрацювати!!\n')
+        del dialog_state[message.from_user.id]
+        return
     bot.send_message(message.chat.id, 'Завантажую файл!')
     handle_file(message)
     print(message)
@@ -248,8 +288,17 @@ def file_message(message):
 
 @bot.message_handler(content_types=['text'])
 def text_message(message):
+    if message.from_user.id != 334401978 and message.from_user.id != 359732226:
+        bot.send_message(message.chat.id, 'Не готовий з вами спiвпрацювати!!\n')
+        del dialog_state[message.from_user.id]
+        return
     if message.from_user.id in dialog_state:
-        dialog_state[message.from_user.id]['next'](message)
+        result = dialog_state[message.from_user.id]['next'](message)
+        if result == 2:
+            dialog_state[message.from_user.id]
+        elif result == -1:
+            handle_error(message, result)
+
     else:
         bot.send_message(message.chat.id, 'Нiчого не зрозумiв!\n%s' % message.text)
     print(message)
