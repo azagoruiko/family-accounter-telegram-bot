@@ -1,7 +1,10 @@
 job "bot-job" {
   datacenters = ["home"]
   type        = "service"
-
+  constraint {
+    attribute = "${node.class}"
+    value = "guestworker"
+  }
   group "bot-group" {
     count = 1
 
@@ -33,7 +36,7 @@ EOH
         env = true
       }
       config {
-        image = "127.0.0.1:9999/docker/accounter-bot:0.0.1"
+        image = "127.0.0.1:9999/docker/accounter-bot:0.0.6"
         args = [
         ]
       }
@@ -41,10 +44,6 @@ EOH
       resources {
         cpu    = 300
         memory = 700
-
-        network {
-          mbits = 10
-        }
       }
 
       service {

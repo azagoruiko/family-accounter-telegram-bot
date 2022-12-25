@@ -29,7 +29,7 @@ matchers_base_url = os.environ['MATCHERS_BASE_URL']
 bot = telebot.TeleBot(token)
 remove_markup = telebot.types.ReplyKeyboardRemove(selective=False)
 goals = Goals(goals_base_url)
-matchers = Matchers("http://192.168.0.21:9999/matcher/")
+matchers = Matchers("http://10.8.0.1:9999/matcher/")
 
 dialog_state = {}
 

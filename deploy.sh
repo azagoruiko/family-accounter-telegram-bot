@@ -1,6 +1,6 @@
-DOCKER_REPO="192.168.0.21:9999/docker"
+DOCKER_REPO="10.8.0.1:9999/docker"
 VER=0.0.1
-export NOMAD_ADDR="http://192.168.0.21:4646"
+export NOMAD_ADDR="http://127.0.0.1:4646"
 if [ ! -e $1 ]; then
     VER=$1
 fi
