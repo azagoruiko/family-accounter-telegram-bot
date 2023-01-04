@@ -22,6 +22,8 @@ rates_bucket = os.environ['RATES_BUCKET']
 pb_input_bucket = os.environ['PB_INPUT_BUCKET']
 pb_raw_bucket = os.environ['PB_RAW_BUCKET']
 alfa_raw_bucket = os.environ['ALFA_RAW_BUCKET']
+cs_raw_bucket = os.environ['CS_RAW_BUCKET']
+kb_raw_bucket = os.environ['KB_RAW_BUCKET']
 
 goals_base_url = os.environ['GOALS_BASE_URL']
 matchers_base_url = os.environ['MATCHERS_BASE_URL']
@@ -29,7 +31,7 @@ matchers_base_url = os.environ['MATCHERS_BASE_URL']
 bot = telebot.TeleBot(token)
 remove_markup = telebot.types.ReplyKeyboardRemove(selective=False)
 goals = Goals(goals_base_url)
-matchers = Matchers("http://192.168.0.21:9999/matcher/")
+matchers = Matchers("http://10.8.0.1:9999/matcher/")
 
 dialog_state = {}
 
@@ -70,8 +72,14 @@ def handle_file(message):
     elif message.document.mime_type == 'text/csv':
         if message.document.file_name == 'rates.csv':
             copy_to_bucket(file_path, rates_bucket)
-        else:
+        elif message.document.file_name.startswith('cs '):
+            copy_to_bucket(file_path, cs_raw_bucket)
+        elif message.document.file_name.startswith('kb '):
+            copy_to_bucket(file_path, kb_raw_bucket)
+        elif message.document.file_name.startswith('alfa '):
             copy_to_bucket(file_path, alfa_raw_bucket)
+        else:
+            bot.send_message(message.chat.id, 'Нiчого не зрозумiв!\n%s' % message.text)
 
 
 def await_category_input(message):

@@ -19,6 +19,8 @@ job "bot-job" {
         PB_INPUT_BUCKET="pb.archive"
         PB_RAW_BUCKET="raw.pb.statements"
         ALFA_RAW_BUCKET="raw.alfa.statements"
+        CS_RAW_BUCKET="raw.cs.statements"
+        KB_RAW_BUCKET="raw.kb.statements"
       }
       template {
         data = <<EOH
@@ -33,18 +35,14 @@ EOH
         env = true
       }
       config {
-        image = "127.0.0.1:9999/docker/accounter-bot:0.0.1"
+        image = "127.0.0.1:9999/docker/accounter-bot:0.0.3"
         args = [
         ]
       }
 
       resources {
-        cpu    = 300
+        cpu    = 350
         memory = 700
-
-        network {
-          mbits = 10
-        }
       }
 
       service {
