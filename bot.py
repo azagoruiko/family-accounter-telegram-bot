@@ -63,7 +63,7 @@ def handle_file(message):
     file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(token, file_info.file_path))
     file_path = message.document.file_name
     open(file_path, 'wb').write(file.content)
-    if message.document.mime_type == 'application/vnd.ms-excel':
+    if message.document.mime_type == 'application/vnd.ms-excel' or message.document.mime_type == 'application/x-msexcel':
         copy_to_bucket(file_path, pb_input_bucket)
         pb_xls_to_csv(file_path)
         copy_to_bucket(file_path.replace('.xls', '.csv'), pb_raw_bucket)
