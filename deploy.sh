@@ -1,6 +1,6 @@
-DOCKER_REPO="10.8.0.5:9999/docker"
+DOCKER_REPO="docker-registry.service.consul"
 VER=0.0.1
-export NOMAD_ADDR="http://10.8.0.1:4646"
+export NOMAD_ADDR="http://10.7.0.1:4646"
 if [ ! -e $1 ]; then
     VER=$1
 fi
